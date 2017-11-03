@@ -1,0 +1,44 @@
+---
+- name: run grafana
+  docker_container:
+      name: grafana
+      image: grafana/grafana:latest
+      ports:
+        - 82:80
+        - 81:81
+        - 8125:8125/udp
+        - 8126:8126
+        - 2003:2003
+        - 3000:3000
+      volumes:
+        - /volumes/grafana/lib:/var/lib/grafana
+        - /volumes/grafana/log:/var/log/grafana
+      env:
+        GRAFANA_PLUGIN_LIST: "grafana-piechart-panel"
+        FORCE_HOSTNAME: auto
+        INFLUXDB_HOST: influxdb
+        INFLUXDB_PASS: influxdb
+        GRAFANA_USER: admin
+        GRAFANA_PASS: admin
+
+- name: run influxdb
+  docker_container:
+      name: influxdb
+      image: influxdb:latest
+      ports:
+        - 8086:8086
+        - 8083:8083
+      volumes:
+        - /volumes/influxdb:/var/lib/influxdb
+      env:
+        FORCE_HOSTNAME: auto
+        PRE_CREATE_DB: telegraf
+
+- name: run telegraf
+  docker_container:
+      name: telegraf
+      image: telegraf:latest
+      env:
+        OUTPUT_INFLUXDB_ENABLED: "true"
+        INFLUXDB_URL: "http://influxdb:8086"
+        INPUT_DOCKER_ENABLED: "true"

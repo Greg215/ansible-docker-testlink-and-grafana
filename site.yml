@@ -1,0 +1,16 @@
+---
+- name: check if instance exist or not
+  hosts: localhost
+  gather_facts: true
+  roles:
+    - precheck
+
+- name: configure on new instance
+  hosts: qa-test
+  gather_facts: true
+  become: true
+  roles:
+    - pip
+    - docker
+    - grafana
+    - testlink

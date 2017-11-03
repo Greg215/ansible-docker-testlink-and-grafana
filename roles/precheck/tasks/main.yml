@@ -1,0 +1,47 @@
+---
+- set_fact:
+    from_ami: False
+
+- name: check the qa instance exist or not
+  ec2_remote_facts:
+      region: "{{ aws_region }}"
+      filters:
+        instance-state-name: running
+        "tag:Name": "{{ instance_name }}"
+  register: created_ec2
+
+- debug:
+    var: created_ec2
+
+- name: add inventory groups from created instance
+  add_host:
+    name: "{{ item.public_ip_address }}"
+    groups: "{{ item.tags.Name }}"
+    ansible_user: ec2-user
+  changed_when: false
+  with_items: "{{ created_ec2.instances }}"
+
+- name: check the volumes exist or not
+  ec2_vol_facts:
+      region: "{{ aws_region }}"
+      filters:
+        "tag:Name": "{{ volume_name }}"
+  register: created_vol
+
+- debug:
+    var: created_vol
+
+- name: Render etc hosts file
+  become: true
+  command: hostname
+  delegate_to: "{{ item.public_ip_address }}"
+  with_items: "{{ created_ec2.instances }}"
+
+- name: Change hostnames
+  become: true
+  shell: echo '{{ item.tags.Name }}' > /etc/hostname | hostname '{{ item.tags.Name}}'
+  delegate_to: "{{ item.public_ip_address }}"
+  with_items: "{{ created_ec2.instances }}"
+
+- debug:
+    msg: "Host started"

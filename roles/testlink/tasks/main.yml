@@ -1,0 +1,39 @@
+---
+- name: run mariadb
+  docker_container:
+    name: mariadb
+    image: bitnami/mariadb:latest
+    env:
+      ALLOW_EMPTY_PASSWORD=yes
+    volumes:
+      - /volumes/mariadb:/var/lib/mysql
+      - mariadb_data:/bitnami
+
+- name: run testlink
+  docker_container:
+    name: testlink
+    image: bitnami/testlink:latest
+    links:
+      - mariadb:mariadb
+    env:
+      TESTLINK_PASSWORD: admin
+      TESTLINK_USERNAME: admin
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - testlink_data:/bitnami
+    volumes_from:
+      - mariadb
+
+- name: operation volume for mariadb
+  docker_volume:
+    name: mariadb_data
+    driver: local
+
+- name: operation volume for testlink
+  docker_volume:
+    name: testlink_data
+    driver: local
+
+    
